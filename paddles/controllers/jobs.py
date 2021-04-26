@@ -1,10 +1,11 @@
 import logging
+from sqlalchemy import Sequence
 from sqlalchemy.orm import load_only
 
 from pecan import expose, abort, request
 
 from paddles import models
-from paddles.models import Job, rollback
+from paddles.models import Job, rollback, Session
 from paddles.controllers import error
 
 log = logging.getLogger(__name__)
@@ -50,10 +51,15 @@ class JobController(object):
                 'attempted to update a non-existent job'
             )
         old_job_status = self.job.status
+        old_priority = self.job.priority
         self.job.update(request.json)
         if self.job.status != old_job_status:
             log.info("Job %s/%s status changed from %s to %s", self.job.name,
                      self.job.job_id, old_job_status, self.job.status)
+        
+        if self.job.priority != old_priority:
+            log.info("Job %s/%s priority changed from %s to %s", self.job.name,
+                     self.job.job_id, old_priority, self.job.priority)
         return dict()
 
     @index.when(method='DELETE', template='json')
@@ -110,14 +116,16 @@ class JobsController(object):
         """
         try:
             data = request.json
-            job_id = data.get('job_id')
+            job_id = str(Session.execute(Sequence('job_id_sequence')))
+            log.info("New Job ID: %s", job_id)
+            data['job_id'] = job_id
+            data['id'] = int(job_id)
         except ValueError:
             rollback()
             error('/errors/invalid/', 'could not decode JSON body')
         # we allow empty data to be pushed
         if not job_id:
             error('/errors/invalid/', "could not find required key: 'job_id'")
-        job_id = data['job_id'] = str(job_id)
 
         query = Job.query.options(load_only('id', 'job_id'))
         query = query.filter_by(job_id=job_id, run=self.run)
@@ -125,10 +133,12 @@ class JobsController(object):
             error('/errors/invalid/',
                   "job with job_id %s already exists" % job_id)
         else:
+            log.info("Job ID: %s", job_id)
             log.info("Creating job: %s/%s", data.get('name', '<no name!>'),
                      job_id)
+            log.info(data)
             self.job = Job(data, self.run)
-        return dict()
+        return dict(job_id=job_id)
 
     @expose('json')
     def _lookup(self, job_id, *remainder):

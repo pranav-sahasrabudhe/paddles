@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, MetaData, event
 from sqlalchemy.orm import scoped_session, sessionmaker, object_session, mapper
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.interfaces import PoolListener
 from pecan import conf
 
 
@@ -74,7 +73,7 @@ def init_model():
     """
     conf.sqlalchemy.engine = _engine_from_config(conf.sqlalchemy)
 
-class SqliteListener(PoolListener):
+class SqliteListener():
     def connect(self, dbapi_con, con_record):
         dbapi_con.execute('PRAGMA journal_mode=MEMORY')
         dbapi_con.execute('PRAGMA synchronous=OFF')
@@ -122,3 +121,4 @@ def flush():
 from .runs import Run  # noqa
 from .jobs import Job  # noqa
 from .nodes import Node  # noqa
+from .queue import Queue

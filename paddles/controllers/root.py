@@ -3,6 +3,7 @@ from pecan import expose
 from paddles.controllers.runs import RunsController
 from paddles.controllers.nodes import NodesController
 from paddles.controllers.errors import ErrorsController
+from paddles.controllers.queue import QueuesController
 from paddles.models import Run, Job
 from paddles.controllers.util import last_seen
 
@@ -27,8 +28,10 @@ class RootController(object):
             last_job = last_seen(Job),
         )
 
+    
     runs = RunsController()
     errors = ErrorsController()
     nodes = NodesController()
+    queue = QueuesController()
 
 
