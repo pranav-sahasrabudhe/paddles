@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, MetaData, event
 from sqlalchemy.orm import scoped_session, sessionmaker, object_session, mapper
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.pool import Pool
 from pecan import conf
 
 
@@ -72,17 +73,20 @@ def init_model():
 
     """
     conf.sqlalchemy.engine = _engine_from_config(conf.sqlalchemy)
+    config = dict(conf.sqlalchemy)
+    if 'sqlite' in config['url']:
+        event.listen(Pool, 'connect', sqlite_connect, named=True)
 
-class SqliteListener():
-    def connect(self, dbapi_con, con_record):
-        dbapi_con.execute('PRAGMA journal_mode=MEMORY')
-        dbapi_con.execute('PRAGMA synchronous=OFF')
+
+def sqlite_connect(**kw):
+    dbapi_con = kw['dbapi_connection']
+    dbapi_con.execute('PRAGMA journal_mode=MEMORY')
+    dbapi_con.execute('PRAGMA synchronous=OFF')
+
 
 def _engine_from_config(configuration):
     configuration = dict(configuration)
     url = configuration.pop('url')
-    if 'sqlite' in url:
-        configuration['listeners'] = [SqliteListener()]
     return create_engine(url, **configuration)
 
 
@@ -121,4 +125,4 @@ def flush():
 from .runs import Run  # noqa
 from .jobs import Job  # noqa
 from .nodes import Node  # noqa
-from .queue import Queue
+from .queue import Queue  #noqa
