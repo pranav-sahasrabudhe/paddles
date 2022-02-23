@@ -12,7 +12,8 @@ To install and use paddles:
 #. Install the following packages (names provided are based on an Ubuntu install): ``git python-dev python-virtualenv postgresql postgresql-contrib postgresql-server-dev-all supervisor``
 #. Install and configure PostgreSQL on your system.
 #. Create a database. Ours is called 'paddles'
-#. Clone the `repository <https://github.com/ceph/paddles.git>`_
+#. Clone the `repository <https://github.com/ceph/paddles.git>`_ 
+    ``git clone https://github.com/ceph/paddles.git``
 #. Inside the repository, create a virtualenv: ``virtualenv ./virtualenv``
 #. Create a copy of the configuration template: ``cp config.py.in config.py``
 #. Edit config.py to reflect your hostnames, database info, etc.
